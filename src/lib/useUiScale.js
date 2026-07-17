@@ -20,7 +20,6 @@ export function useUiScale() {
   const [scale, setScale] = useState(loadInitialScale);
 
   useEffect(() => {
-    document.documentElement.style.fontSize = `${16 * scale}px`;
     try {
       localStorage.setItem(STORAGE_KEY, String(scale));
     } catch {
