@@ -1,0 +1,9 @@
+# ให้ text ทุกไฟล์ normalize เป็น LF ใน repo กัน CRLF/LF ตีกันข้ามเครื่อง (Windows/Mac/Linux)
+* text=auto eol=lf
+
+# ไฟล์ binary — ห้าม git ยุ่งกับ line ending
+*.png binary
+*.svg -text
+*.ico binary
+*.woff binary
+*.woff2 binary
