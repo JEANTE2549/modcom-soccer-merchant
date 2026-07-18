@@ -2,6 +2,7 @@ import { useEffect, useReducer } from "react";
 import { createInitialState, makeRoster } from "../data/countries.seed";
 import { COUNTRY_META } from "../data/countryMeta";
 import { buyPlayer, cancelPlayer } from "./pricing";
+import { GOOGLE_APPS_SCRIPT_URL } from "../config";
 
 export const STORAGE_KEY = "soccer-dashboard-state";
 
@@ -99,6 +100,44 @@ function reducer(state, action) {
       [country]: makeRoster(country),
     };
   }
+  if (action.type === "sync_sheet_data") {
+    const newState = { ...state };
+    let hasChanges = false;
+    
+    action.data.forEach(item => {
+      // Find matching country code based on the label returned from Google Sheet
+      const countryCode = Object.keys(COUNTRY_META).find(
+        (key) => COUNTRY_META[key].label.toLowerCase() === (item.country || "").toLowerCase()
+      );
+      
+      if (countryCode && newState[countryCode]) {
+        const roster = newState[countryCode];
+        const currentPlayers = parseInt(item.currentPlayers, 10);
+        
+        if (!isNaN(currentPlayers)) {
+          // If currentPlayers is 8, 11 - 8 = 3 players are sold
+          const soldCount = Math.max(0, REQUIRED_ROSTER_LENGTH - currentPlayers);
+          
+          let changedForCountry = false;
+          const newRoster = roster.map((p, index) => {
+            const shouldBeSold = index < soldCount;
+            if (p.sold !== shouldBeSold) {
+              changedForCountry = true;
+              return { ...p, sold: shouldBeSold };
+            }
+            return p;
+          });
+          
+          if (changedForCountry) {
+            newState[countryCode] = newRoster;
+            hasChanges = true;
+          }
+        }
+      }
+    });
+    
+    return hasChanges ? newState : state;
+  }
   return state;
 }
 
@@ -115,6 +154,37 @@ export function useSoccerDashboard() {
       // storage unavailable/full — app keeps running without persistence
     }
   }, [state]);
+
+  useEffect(() => {
+    // Skip polling if no URL is provided yet
+    if (!GOOGLE_APPS_SCRIPT_URL || GOOGLE_APPS_SCRIPT_URL.includes("YOUR_SCRIPT_ID")) return;
+
+    let mounted = true;
+    
+    async function fetchData() {
+      try {
+        const res = await fetch(GOOGLE_APPS_SCRIPT_URL);
+        if (!res.ok) throw new Error("Failed to fetch");
+        const data = await res.json();
+        
+        if (mounted && Array.isArray(data)) {
+          dispatch({ type: "sync_sheet_data", data });
+        }
+      } catch (err) {
+        console.error("Error polling Google Sheet data:", err);
+      }
+    }
+
+    // Initial fetch
+    fetchData();
+    
+    // Poll every 3 seconds
+    const interval = setInterval(fetchData, 3000);
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, []);
 
   function buy(country, playerId) {
     dispatch({ type: "buy", country, playerId });

@@ -114,12 +114,6 @@ export default function SquadView({ country, roster, onBuy, onCancel, onReset, o
 
             <div className="flex items-center gap-3">
               <ZoomControl {...uiScale} />
-              <button
-                onClick={handleReset}
-                className="bg-white hover:bg-red-50 active:scale-95 transition rounded-full px-5 py-2.5 font-bold shadow-xl text-red-600"
-              >
-                ↺ Reset
-              </button>
             </div>
           </div>
 

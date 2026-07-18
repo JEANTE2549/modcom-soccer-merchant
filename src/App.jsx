@@ -16,9 +16,9 @@ function App() {
     <SquadView
       country={country}
       roster={state[country]}
-      onBuy={buy}
-      onCancel={(playerId) => cancel(country, playerId)}
-      onReset={() => reset(country)}
+      onBuy={() => { console.log('Read-only: Data synced from Google Sheet'); }}
+      onCancel={() => { console.log('Read-only: Data synced from Google Sheet'); }}
+      onReset={() => { console.log('Read-only: Data synced from Google Sheet'); }}
       onBack={() => setCountry(null)}
     />
   );
